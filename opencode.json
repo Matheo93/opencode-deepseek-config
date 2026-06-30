@@ -1,0 +1,93 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "deepseek/deepseek-v4-pro",
+  "small_model": "deepseek/deepseek-v4-flash",
+  "autoupdate": true,
+  "share": "disabled",
+  "instructions": ["~/.config/opencode/AGENTS.md"],
+  "provider": {
+    "deepseek": {
+      "name": "DeepSeek",
+      "options": {
+        "apiKey": "{env:DEEPSEEK_API_KEY}",
+        "baseURL": "https://api.deepseek.com",
+        "timeout": 600000
+      },
+      "models": {
+        "deepseek-v4-pro": { "name": "DeepSeek V4 Pro" },
+        "deepseek-v4-flash": { "name": "DeepSeek V4 Flash" },
+        "deepseek-chat": { "name": "DeepSeek V4 (alias -> resolu vers Flash cote serveur)" }
+      }
+    }
+  },
+  "permission": {
+    "edit": "allow",
+    "write": "allow",
+    "read": "allow",
+    "glob": "allow",
+    "grep": "allow",
+    "list": "allow",
+    "bash": {
+      "*": "allow",
+      "*rm -rf*": "ask",
+      "*rm -fr*": "ask",
+      "*rm -r -f*": "ask",
+      "*rm -f -r*": "ask",
+      "* -delete*": "ask",
+      "*shred*": "ask",
+      "*wipefs*": "ask",
+      "*mkfs*": "ask",
+      "*dd if=*": "ask",
+      "*dd of=*": "ask",
+      "*truncate -s 0*": "ask",
+      "*fdisk*": "ask",
+      "*parted*": "ask",
+      "*sgdisk*": "ask",
+      "*mkswap*": "ask",
+      "*iptables -F*": "ask",
+      "*iptables --flush*": "ask",
+      "*iptables -X*": "ask",
+      "*ufw disable*": "ask",
+      "*ufw reset*": "ask",
+      "*systemctl stop ssh*": "ask",
+      "*systemctl restart ssh*": "ask",
+      "*systemctl disable ssh*": "ask",
+      "*service ssh stop*": "ask",
+      "*ifdown*": "ask",
+      "*reboot*": "ask",
+      "*shutdown*": "ask",
+      "*poweroff*": "ask",
+      "*halt*": "ask",
+      "*crontab -r*": "ask",
+      "*DROP DATABASE*": "ask",
+      "*DROP TABLE*": "ask",
+      "*:(){*": "deny"
+    },
+    "webfetch": "allow",
+    "websearch": "allow",
+    "task": "allow"
+  },
+  "agent": {
+    "ops": {
+      "description": "Operateur DevOps/sysadmin autonome: edite, deploie via ssh, teste, mesure, corrige en boucle",
+      "mode": "primary",
+      "model": "deepseek/deepseek-v4-pro",
+      "options": { "thinking": { "type": "disabled" } },
+      "prompt": "Tu es un operateur DevOps/SRE/sysadmin autonome. Tu edites des scripts et confs en local, tu deploies sur les serveurs via 'ssh <host> ...', tu lances les tests/mesures, tu lis stdout/stderr et tu corriges en boucle sans demander de validation. Tu groundes chaque conclusion sur une mesure live (count, ratio, log, p50/p95/p99), jamais sur une supposition. Tu ne t'arretes pas une marche trop tot: tu boucles jusqu'au resultat verifie."
+    },
+    "deep": {
+      "description": "Raisonnement profond: debug retors, optimisation, analyse systeme complexe",
+      "mode": "subagent",
+      "model": "deepseek/deepseek-v4-pro",
+      "options": { "reasoning_effort": "high" },
+      "prompt": "Tu es invoque pour les problemes durs: bug non reproductible, optimisation de perf, analyse systeme en profondeur. Tu raisonnes etape par etape, tu proposes une hypothese testable, tu donnes la commande exacte pour la verifier."
+    },
+    "fast": {
+      "description": "Taches rapides et a fort volume: lecture, grep, petites edits",
+      "mode": "subagent",
+      "model": "deepseek/deepseek-v4-flash",
+      "options": { "thinking": { "type": "disabled" } },
+      "prompt": "Tu traites vite les taches simples et volumineuses (lecture de logs, grep, petites modifications). Tu vas droit au resultat, verbatim brut, pas de narration."
+    }
+  }
+}
