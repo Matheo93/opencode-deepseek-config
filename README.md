@@ -1,7 +1,8 @@
 # opencode-deepseek-config
 
 Config [opencode](https://opencode.ai) tunée pour **DeepSeek V4** (Pro / Flash), avec
-3 agents prêts à l'emploi et un plugin de **mémoire longue cross-model**.
+**4 agents** prêts à l'emploi, un plugin de **mémoire longue cross-model**, et une
+**suite red-team web** (recon/enum/vuln structurée + loot KB persistant).
 
 À déposer dans `~/.config/opencode/`.
 
@@ -60,6 +61,59 @@ messages plus loin (compaction). Le plugin résout ça avec ses hooks :
 
 `memory/LESSONS.md` est **gitignoré** (perso, propre à chaque opérateur). Il se
 crée tout seul au premier lancement.
+
+## Suite red-team — `plugin/redteam.ts` + agent `redteam`
+
+Ce qui fait d'opencode un meilleur harness offensif qu'un CLI généraliste : des
+**tools first-class qui rendent du JSON** (l'agent grounde sur de la donnée
+structurée, pas du stdout à reparser) + une **KB de loot persistante par cible**
+qui se construit toute seule et survit aux sessions.
+
+> ⚠️ **Scope.** Outils recon / énumération / scan de vulns **non destructifs**
+> (pas de DoS, pas de ciblage de masse). À n'utiliser que sur des cibles que tu
+> es **autorisé** à tester (ROE / pentest engagement / lab). L'agent `redteam`
+> est cadré pour refuser hors-scope.
+
+### 6 tools structurés (lancé via l'agent `redteam`)
+
+| tool | binaire | rôle |
+|------|---------|------|
+| `recon_probe`   | httpx     | sonde live : status, titre, tech, serveur, TLS, CDN (**recon-first**) |
+| `recon_subs`    | subfinder | énumération de sous-domaines |
+| `recon_crawl`   | katana    | crawl endpoints / JS / params |
+| `recon_ports`   | naabu     | scan de ports TCP rapide |
+| `recon_content` | ffuf      | fichiers/dossiers cachés (`.git`, `.env`, `wp-*`, backups, api…) — **wordlist builtin**, marche sans seclists |
+| `recon_vuln`    | nuclei    | scan de vulns template-based, filtrable par `severity`/`tags` |
+
+Chaque tool **append ses findings** dans `recon/<host>.jsonl` (gitignoré, perso) :
+une mémoire de cible persistante (ports, endpoints, vulns, paths) qu'aucun CLI
+généraliste n'offre nativement.
+
+### Prérequis binaires
+
+Stack [ProjectDiscovery](https://github.com/projectdiscovery) + ffuf :
+```bash
+# via go install (ou les releases github)
+go install github.com/projectdiscovery/httpx/cmd/httpx@latest
+go install github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+go install github.com/projectdiscovery/katana/cmd/katana@latest
+go install github.com/projectdiscovery/naabu/v2/cmd/naabu@latest
+go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
+go install github.com/ffuf/ffuf/v2@latest
+# nuclei télécharge ses templates au 1er run
+```
+
+### Usage
+
+```bash
+opencode --agent redteam            # bascule sur l'opérateur offensif
+# puis : "recon vanessaia.fr, scope ROE signé"
+# -> l'agent enchaîne probe -> subs -> crawl/content -> vuln, loot auto, rapport structuré
+```
+
+L'agent escalade l'exploitation ciblée à la main (sqlmap, curl) via `bash` quand
+un lead est solide. Méthodo : recon-first, 0-mock (chaque claim groundé sur la
+sortie d'un tool), pas de validation demandée, boucle jusqu'au résultat vérifié.
 
 ## AGENTS.md
 
