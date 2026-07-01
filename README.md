@@ -152,6 +152,23 @@ npx @puppeteer/browsers install chrome@stable   # -> ~/.cache/puppeteer/chrome/
 `browser.ts` prend le Chrome le plus récent de `~/.cache/puppeteer/chrome/`, ou
 `PUPPETEER_EXECUTABLE_PATH` si tu pointes un autre binaire. Aucun `apt`, aucun sudo.
 
+## Recherche de posts X — `plugin/x.ts` (`x_search`)
+
+Deux façons de chercher sur X avec une clé xAI/Grok :
+1. **ask LLM** — tu poses une question, Grok cherche X et te digère la réponse.
+2. **je cherche moi-même** (`x_search`) — tu passes TA query, on récupère les
+   **posts bruts + leurs liens** (`x.com/…/status/…`), puis tu ouvres les
+   intéressants avec `browser_open` pour lire le contenu/l'outil.
+
+`x_search(query, mode?, limit?, from_date?)` utilise l'**Agent Tools API** de xAI
+(`POST /v1/responses`, `tools:[{type:"x_search"}]` → `x_keyword_search` /
+`x_semantic_search`). ⚠️ l'ancien `search_parameters` (live search) est
+**déprécié** côté xAI, ne pas l'utiliser.
+
+Clé : lue depuis **`process.env.XAI_API_KEY`**, jamais en dur. Mets-la en env
+(ex: `~/.config/xai.env` avec `export XAI_API_KEY=xai-…`, sourcé au démarrage),
+comme la clé DeepSeek.
+
 ## AGENTS.md
 
 Disposition globale injectée dans tous les agents : opérateur autonome, 0-mock
