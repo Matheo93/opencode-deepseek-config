@@ -115,6 +115,43 @@ L'agent escalade l'exploitation ciblée à la main (sqlmap, curl) via `bash` qua
 un lead est solide. Méthodo : recon-first, 0-mock (chaque claim groundé sur la
 sortie d'un tool), pas de validation demandée, boucle jusqu'au résultat vérifié.
 
+## Navigateur réel + OCR — `plugin/browser.ts` + `plugin/vision.ts`
+
+Deux manques quand le modèle n'a pas de vision et qu'on n'a pas les droits root :
+il **lit mal les images collées** et il n'a **pas de navigateur**. Corrigés,
+**sans sudo** — Chrome for Testing s'installe dans le home, pas besoin de root.
+
+### Navigateur (`browser_*`, Chrome headless via puppeteer-core)
+Conçu **text-first** : les tools ne rendent pas des pixels (illisibles pour un
+modèle texte) mais un **snapshot texte** = texte visible + éléments interactifs
+numérotés `[ref]`. On clique/remplit par `[ref]`. Même principe que Playwright MCP.
+
+| tool | rôle |
+|------|------|
+| `browser_open(url)`        | ouvre + snapshot (titre, texte, éléments `[ref]`) |
+| `browser_read()`           | re-snapshot la page courante |
+| `browser_click(ref)`       | clique par `[ref]`, selector CSS, ou `text=…` |
+| `browser_type(ref,text,submit?)` | remplit un champ, Enter optionnel |
+| `browser_extract(selector,attr?)` | récolte texte/href/attr par CSS (pas d'eval JS) |
+| `browser_screenshot(full?)` | PNG (archive / pour un modèle vision) |
+
+Le navigateur **persiste entre les tool calls** d'une session (singleton).
+
+### OCR (`image_read`, tesseract.js WASM)
+`image_read(src)` — OCR fra+eng d'une image (chemin, `data:`, `file://`, http).
+Quand une image est collée, l'agent passe son `url` → texte extrait. Limite
+honnête : OCR de **texte** dans l'image, pas de compréhension de photo/scène.
+
+### Prérequis (no-sudo)
+```bash
+bun install            # installe puppeteer-core + tesseract.js (pur JS/WASM)
+# Chrome n'est PAS téléchargé par puppeteer-core -> une fois, sans root :
+npx @puppeteer/browsers install chrome@stable   # -> ~/.cache/puppeteer/chrome/
+# tesseract télécharge ses données de langue en cache au 1er OCR.
+```
+`browser.ts` prend le Chrome le plus récent de `~/.cache/puppeteer/chrome/`, ou
+`PUPPETEER_EXECUTABLE_PATH` si tu pointes un autre binaire. Aucun `apt`, aucun sudo.
+
 ## AGENTS.md
 
 Disposition globale injectée dans tous les agents : opérateur autonome, 0-mock

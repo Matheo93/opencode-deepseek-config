@@ -1,5 +1,7 @@
 {
   "dependencies": {
-    "@opencode-ai/plugin": "1.17.8"
+    "@opencode-ai/plugin": "1.17.12",
+    "puppeteer-core": "^25.2.1",
+    "tesseract.js": "^7.0.0"
   }
 }
